@@ -127,12 +127,18 @@ Respond in EXACTLY this JSON format (no markdown, no code fences, raw JSON only)
         body: JSON.stringify({ prompt }),
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to generate idea");
+      let parsed;
+      try {
+        parsed = await response.json();
+      } catch (e) {
+        const text = await response.text();
+        console.error("API response was not JSON:", text);
+        throw new Error("Server error: " + (response.statusText || "Invalid response"));
       }
 
-      const parsed = await response.json();
+      if (!response.ok) {
+        throw new Error(parsed.error || "Failed to generate idea");
+      }
       setResult(parsed);
 
       const newTitles = [
