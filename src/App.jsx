@@ -127,11 +127,11 @@ Respond in EXACTLY this JSON format (no markdown, no code fences, raw JSON only)
         body: JSON.stringify({ prompt }),
       });
 
+      const text = await response.text();
       let parsed;
       try {
-        parsed = await response.json();
+        parsed = JSON.parse(text);
       } catch (e) {
-        const text = await response.text();
         console.error("API response was not JSON:", text);
         throw new Error("Server error: " + (response.statusText || "Invalid response"));
       }
