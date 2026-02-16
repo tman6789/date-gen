@@ -133,7 +133,7 @@ Respond in EXACTLY this JSON format (no markdown, no code fences, raw JSON only)
         parsed = JSON.parse(text);
       } catch (e) {
         console.error("API response was not JSON:", text);
-        throw new Error("Server error: " + (response.statusText || "Invalid response"));
+        throw new Error(`Server Error ${response.status}: ${text.slice(0, 50)}...`);
       }
 
       if (!response.ok) {
