@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         // to avoid confusion or just ask them to set "GEMINI_API_KEY".
         // Let's stick to a clean "GEMINI_API_KEY" and ask user to set it.
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
