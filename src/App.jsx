@@ -20,8 +20,6 @@ export default function App() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [recentTitles, setRecentTitles] = useState([]);
   const [error, setError] = useState(null);
-  const [apiKey, setApiKey] = useState("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -30,9 +28,6 @@ export default function App() {
 
     const storedRecents = localStorage.getItem("date-recents");
     if (storedRecents) setRecentTitles(JSON.parse(storedRecents));
-
-    const storedKey = localStorage.getItem("anthropic-api-key");
-    if (storedKey) setApiKey(storedKey);
   }, []);
 
   const saveFavorites = (newFavs) => {
@@ -44,11 +39,6 @@ export default function App() {
     const trimmed = newRecents.slice(-20);
     setRecentTitles(trimmed);
     localStorage.setItem("date-recents", JSON.stringify(trimmed));
-  };
-
-  const saveApiKey = (key) => {
-    setApiKey(key);
-    localStorage.setItem("anthropic-api-key", key);
   };
 
   const toggleVibe = (id) => {
@@ -64,11 +54,6 @@ export default function App() {
   };
 
   const generate = async () => {
-    if (!apiKey) {
-      setShowApiKeyInput(true);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setResult(null);
@@ -134,35 +119,20 @@ Respond in EXACTLY this JSON format (no markdown, no code fences, raw JSON only)
 }`;
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "dangerously-allow-browser": "true"
         },
-        body: JSON.stringify({
-          model: "claude-3-sonnet-20240229",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify({ prompt }),
       });
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error?.message || "API Error");
+        throw new Error(errData.error || "Failed to generate idea");
       }
 
-      const data = await response.json();
-      const text = data.content
-        ?.filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("");
-
-      const cleaned = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-
+      const parsed = await response.json();
       setResult(parsed);
 
       const newTitles = [
@@ -238,45 +208,6 @@ Respond in EXACTLY this JSON format (no markdown, no code fences, raw JSON only)
             One tap. One plan. Go have fun.
           </p>
         </div>
-
-        {/* API Key Modal */}
-        {showApiKeyInput && (
-          <div style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 200, display: "flex", justifyContent: "center", alignItems: "center", padding: "20px", backdropFilter: "blur(5px)"
-          }}>
-            <div style={{ background: "#1e1033", padding: "24px", borderRadius: "20px", width: "100%", maxWidth: "400px", border: "1px solid rgba(168,85,247,0.3)" }}>
-              <h3 style={{ marginTop: 0, color: "#f5f3ff" }}>🔑 API Key Required</h3>
-              <p style={{ color: "#c4b5fd", fontSize: "14px" }}>
-                To generate dates, please enter your Anthropic API Key. It will be stored locally on your device.
-              </p>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-ant-..."
-                style={{
-                  width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #4c1d95", background: "#0f0520", color: "#fff", marginBottom: "16px", outline: "none", boxSizing: "border-box"
-                }}
-              />
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-                <button onClick={() => setShowApiKeyInput(false)} style={{ padding: "8px 16px", background: "none", border: "none", color: "#8b7fad", cursor: "pointer" }}>Cancel</button>
-                <button
-                  onClick={() => {
-                    if (apiKey) {
-                      saveApiKey(apiKey);
-                      setShowApiKeyInput(false);
-                    }
-                  }}
-                  style={{
-                    padding: "8px 20px", background: "#a855f7", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer"
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Location */}
         <div style={{ marginBottom: "20px" }}>
@@ -436,18 +367,6 @@ Respond in EXACTLY this JSON format (no markdown, no code fences, raw JSON only)
           )}
         </button>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-
-        {/* API Key Hint if missing */}
-        {!apiKey && (
-          <button
-            onClick={() => setShowApiKeyInput(true)}
-            style={{
-              display: "block", margin: "0 auto 10px", background: "none", border: "none", color: "#6b5f8a", fontSize: "11px", cursor: "pointer", textDecoration: "underline"
-            }}
-          >
-            Set API Key
-          </button>
-        )}
 
         {/* Favorites button */}
         <button
