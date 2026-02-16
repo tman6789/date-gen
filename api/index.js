@@ -31,6 +31,6 @@ export default async function handler(req, res) {
         res.status(200).json(JSON.parse(cleaned));
     } catch (error) {
         console.error('Gemini API Error:', error);
-        res.status(500).json({ error: 'Failed to generate date idea' });
+        res.status(500).json({ error: error.message || 'Failed to generate date idea' });
     }
 }
