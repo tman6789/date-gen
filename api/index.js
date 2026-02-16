@@ -19,8 +19,8 @@ export default async function handler(req, res) {
         // to avoid confusion or just ask them to set "GEMINI_API_KEY".
         // Let's stick to a clean "GEMINI_API_KEY" and ask user to set it.
 
-        // Fallback to the most standard model if flash is acting up
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        // Reverting to the recommended model
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -32,6 +32,22 @@ export default async function handler(req, res) {
         res.status(200).json(JSON.parse(cleaned));
     } catch (error) {
         console.error('Gemini API Error:', error);
-        res.status(500).json({ error: error.message || 'Failed to generate date idea' });
+
+        // Debug: Try to list available models to see what the key has access to
+        let modelListError = "";
+        try {
+            const listResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+            const listData = await listResponse.json();
+            if (listData.models) {
+                const availableModels = listData.models.map(m => m.name.replace('models/', '')).join(', ');
+                modelListError = ` | Available models: [${availableModels}]`;
+            } else {
+                modelListError = ` | Could not list models: ${JSON.stringify(listData)}`;
+            }
+        } catch (listErr) {
+            modelListError = ` | Failed to list models: ${listErr.message}`;
+        }
+
+        res.status(500).json({ error: (error.message || 'Failed to generate') + modelListError });
     }
 }
